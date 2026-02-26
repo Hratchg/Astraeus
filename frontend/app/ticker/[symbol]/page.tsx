@@ -27,17 +27,16 @@ export default function TickerPage({
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setExplain(null);
 
-    Promise.all([
-      getPredictions(symbol, horizon),
-      getExplainability(symbol, horizon),
-    ])
-      .then(([pred, exp]) => {
-        setPrediction(pred);
-        setExplain(exp);
-      })
+    getPredictions(symbol, horizon)
+      .then((pred) => setPrediction(pred))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+
+    getExplainability(symbol, horizon)
+      .then((exp) => setExplain(exp))
+      .catch(() => setExplain(null));
   }, [symbol, horizon]);
 
   if (loading) {
@@ -150,8 +149,16 @@ export default function TickerPage({
         </div>
       )}
 
-      {tab === "explain" && explain && (
-        <ExplainabilityPanel data={explain} />
+      {tab === "explain" && (
+        explain ? (
+          <ExplainabilityPanel data={explain} />
+        ) : (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-muted-foreground">
+              Explainability data is not available for this ticker.
+            </p>
+          </div>
+        )
       )}
     </div>
   );

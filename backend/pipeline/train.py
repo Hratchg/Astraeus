@@ -38,7 +38,8 @@ def train_tft(
 
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
-    best_model_path = trainer.checkpoint_callback.best_model_path
+    callback = trainer.checkpoint_callback
+    best_model_path = callback.best_model_path if callback else None
     if best_model_path:
         best_model = type(model).load_from_checkpoint(best_model_path)
     else:

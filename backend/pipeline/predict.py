@@ -5,6 +5,13 @@ from torch.utils.data import DataLoader
 from datetime import datetime, timezone
 from backend.ml.model import QUANTILES
 
+# Derive quantile indices dynamically from QUANTILES list
+_IDX_MEDIAN = QUANTILES.index(0.5)
+_IDX_LOWER_80 = QUANTILES.index(0.1)
+_IDX_UPPER_80 = QUANTILES.index(0.9)
+_IDX_LOWER_95 = QUANTILES.index(0.025)
+_IDX_UPPER_95 = QUANTILES.index(0.975)
+
 
 def generate_predictions(model, dataset, historical_df, symbol, horizon=5):
     """Generate predictions for a single ticker at a specific horizon.
@@ -37,6 +44,9 @@ def generate_predictions(model, dataset, historical_df, symbol, horizon=5):
             "volume": int(row["Volume"]),
         })
 
+    if not historical:
+        raise ValueError(f"No historical data for {symbol}")
+
     last_date = pd.Timestamp(historical[-1]["date"])
     prediction_rows = []
     for i in range(min(horizon, last_pred.shape[0])):
@@ -44,11 +54,11 @@ def generate_predictions(model, dataset, historical_df, symbol, horizon=5):
         q = last_pred[i]
         prediction_rows.append({
             "date": pred_date.strftime("%Y-%m-%d"),
-            "median": round(float(q[3]), 2),
-            "lower_80": round(float(q[1]), 2),
-            "upper_80": round(float(q[5]), 2),
-            "lower_95": round(float(q[0]), 2),
-            "upper_95": round(float(q[6]), 2),
+            "median": round(float(q[_IDX_MEDIAN]), 2),
+            "lower_80": round(float(q[_IDX_LOWER_80]), 2),
+            "upper_80": round(float(q[_IDX_UPPER_80]), 2),
+            "lower_95": round(float(q[_IDX_LOWER_95]), 2),
+            "upper_95": round(float(q[_IDX_UPPER_95]), 2),
         })
 
     return {

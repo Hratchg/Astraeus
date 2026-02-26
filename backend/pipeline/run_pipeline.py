@@ -16,6 +16,7 @@ from backend.pipeline.build_features import build_all_features
 from backend.pipeline.train import train_tft
 from backend.pipeline.predict import generate_predictions
 from backend.pipeline.export import export_predictions, export_explainability, export_metadata
+from backend.ml.explain import extract_feature_importance, extract_temporal_attention
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +81,29 @@ def run(
     )
     logger.info("Training complete.")
 
-    # Step 4: Predict + export for each ticker/horizon
-    logger.info("Step 4/4: Generating predictions and exporting …")
+    # Step 4: Generate explainability data
+    logger.info("Step 4/5: Extracting explainability data …")
+    interpretation = None
+    try:
+        raw_interpretation = model.interpret_output(
+            model.predict(
+                training_dataset.to_dataloader(batch_size=64, num_workers=0),
+                mode="raw",
+                return_x=True,
+            ),
+            reduction="mean",
+        )
+        interpretation = {
+            "encoder_variables": raw_interpretation.get("encoder_variables", []),
+            "encoder_importance": raw_interpretation.get("encoder_importance", []),
+            "attention": raw_interpretation.get("attention", None),
+        }
+        logger.info("Explainability extraction complete.")
+    except Exception:
+        logger.exception("Failed to extract explainability — predictions will still export.")
+
+    # Step 5: Predict + export for each ticker/horizon
+    logger.info("Step 5/5: Generating predictions and exporting …")
     processed_tickers = list(ohlcv_data.keys())
     for symbol in processed_tickers:
         for horizon in HORIZONS:
@@ -98,6 +120,29 @@ def run(
                 logger.info("  Exported %s_h%d.json", symbol, horizon)
             except Exception:
                 logger.exception("  Failed to predict/export %s h=%d", symbol, horizon)
+
+            # Export explainability if extraction succeeded
+            if interpretation is not None:
+                try:
+                    feature_imp = extract_feature_importance(interpretation)
+                    sym_df = feature_df[feature_df["symbol"] == symbol] if "symbol" in feature_df.columns else feature_df
+                    dates = [str(d)[:10] for d in sym_df.tail(60).index]
+                    attn_weights = interpretation.get("attention")
+                    temporal_attn = []
+                    if attn_weights is not None:
+                        import numpy as np
+                        attn = np.asarray(attn_weights).mean(axis=0)
+                        temporal_attn = extract_temporal_attention(attn[:len(dates)], dates)
+                    explain_data = {
+                        "symbol": symbol,
+                        "horizon_days": horizon,
+                        "feature_importance": feature_imp,
+                        "temporal_attention": temporal_attn,
+                    }
+                    export_explainability(explain_data, output_dir=output_dir)
+                    logger.info("  Exported %s_explain_h%d.json", symbol, horizon)
+                except Exception:
+                    logger.exception("  Failed to export explainability for %s h=%d", symbol, horizon)
 
     # Export metadata
     export_metadata(

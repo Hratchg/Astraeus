@@ -206,7 +206,11 @@ def _normalise_stoch_col(col: str) -> str:
     pandas_ta 0.3.x: ``STOCHk_14_3_3``
     pandas_ta 0.4.x: ``STOCHk_14_3_3`` (+ STOCHh_14_3_3)
 
-    We keep the original naming but strip the trailing ``_3`` from
-    the histogram column and keep k/d as-is.
+    Strip trailing duplicate parameter from column names.
+    ``STOCHk_14_3_3`` → ``STOCHk_14_3``
     """
+    parts = col.split("_")
+    # Expected: prefix(STOCHk/STOCHd/STOCHh), k(14), d(3)[, duplicate(3)]
+    if len(parts) >= 4 and parts[0].startswith("STOCH"):
+        return f"{parts[0]}_{parts[1]}_{parts[2]}"
     return col

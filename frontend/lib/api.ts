@@ -10,10 +10,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 async function fetchJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) {
-    const error = await res
+    const body = await res
       .json()
-      .catch(() => ({ error: "unknown", detail: res.statusText }));
-    throw new Error(error.detail || error.error || "API error");
+      .catch(() => ({ detail: res.statusText }));
+    // FastAPI wraps HTTPException detail in {"detail": ...}
+    const detail = body.detail;
+    const message =
+      typeof detail === "object" && detail !== null
+        ? detail.detail || detail.error
+        : detail || "API error";
+    throw new Error(message);
   }
   return res.json();
 }

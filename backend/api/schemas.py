@@ -57,6 +57,10 @@ class ExplainabilityResponse(BaseModel):
     temporal_attention: list[TemporalAttention]
 
 
-class ErrorResponse(BaseModel):
+class ErrorDetail(BaseModel):
     error: str
     detail: str
+
+
+class ErrorResponse(BaseModel):
+    detail: ErrorDetail

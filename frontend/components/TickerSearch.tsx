@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,14 +13,24 @@ export function TickerSearch() {
   const [query, setQuery] = useState("");
   const [tickers, setTickers] = useState<TickerInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [error, setError] = useState(false);
+  const pathname = usePathname();
+
+  // Extract current symbol from pathname like /ticker/AAPL
+  const activeSymbol = pathname?.startsWith("/ticker/")
+    ? pathname.split("/")[2]
+    : null;
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(true);
+      setError(false);
       getTickers(query || undefined)
         .then(setTickers)
-        .catch(() => setTickers([]))
+        .catch(() => {
+          setTickers([]);
+          setError(true);
+        })
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timeout);
@@ -45,6 +56,16 @@ export function TickerSearch() {
               Loading tickers...
             </p>
           )}
+          {!loading && error && (
+            <p className="text-xs text-destructive px-2 py-4">
+              Failed to load tickers. Is the API running?
+            </p>
+          )}
+          {!loading && !error && tickers.length === 0 && (
+            <p className="text-xs text-muted-foreground px-2 py-4">
+              No tickers found.
+            </p>
+          )}
           {sectors.map((sector) => (
             <div key={sector} className="mb-4">
               <p className="text-xs font-medium text-muted-foreground px-2 mb-1">
@@ -52,30 +73,37 @@ export function TickerSearch() {
               </p>
               {tickers
                 .filter((t) => t.sector === sector)
-                .map((t) => (
-                  <button
-                    key={t.symbol}
-                    onClick={() => router.push(`/ticker/${t.symbol}`)}
-                    className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted flex items-center justify-between group"
-                  >
-                    <div>
-                      <span className="font-mono text-sm font-medium">
-                        {t.symbol}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {t.name}
-                      </span>
-                    </div>
-                    {t.confidence_level === "low" && (
-                      <Badge
-                        variant="outline"
-                        className="text-amber-500 border-amber-500 text-[10px]"
-                      >
-                        Low
-                      </Badge>
-                    )}
-                  </button>
-                ))}
+                .map((t) => {
+                  const isActive = activeSymbol === t.symbol;
+                  return (
+                    <Link
+                      key={t.symbol}
+                      href={`/ticker/${t.symbol}`}
+                      className={`w-full text-left px-2 py-1.5 rounded-md flex items-center justify-between group ${
+                        isActive
+                          ? "bg-muted text-foreground"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <div>
+                        <span className="font-mono text-sm font-medium">
+                          {t.symbol}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {t.name}
+                        </span>
+                      </div>
+                      {t.confidence_level === "low" && (
+                        <Badge
+                          variant="outline"
+                          className="text-amber-500 border-amber-500 text-[10px]"
+                        >
+                          Low
+                        </Badge>
+                      )}
+                    </Link>
+                  );
+                })}
             </div>
           ))}
         </div>

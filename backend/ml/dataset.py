@@ -14,9 +14,6 @@ from pytorch_forecasting import TimeSeriesDataSet
 # Constants
 # ---------------------------------------------------------------------------
 
-TIME_VARYING_KNOWN: list[str] = []
-"""No future-known features — all covariates are observed, not planned."""
-
 TIME_VARYING_UNKNOWN: list[str] = [
     "Close",
     "Open",
@@ -83,9 +80,6 @@ def build_time_series_dataset(
         add_encoder_length=True,
         target_normalizer="auto",
     )
-
-    if TIME_VARYING_KNOWN:
-        kwargs["time_varying_known_reals"] = TIME_VARYING_KNOWN
 
     training = TimeSeriesDataSet(**kwargs)
 

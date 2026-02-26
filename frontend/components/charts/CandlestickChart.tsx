@@ -5,6 +5,7 @@ import {
   createChart,
   CandlestickSeries,
   AreaSeries,
+  LineSeries,
 } from "lightweight-charts";
 import type { OHLCVPoint, PredictionPoint } from "@/lib/types";
 
@@ -53,8 +54,8 @@ export function CandlestickChart({ historical, predictions }: Props) {
       }))
     );
 
-    // 95% confidence band (lighter)
-    const band95 = chart.addSeries(AreaSeries, {
+    // 95% confidence band (upper area fills down, lower line marks boundary)
+    const band95Upper = chart.addSeries(AreaSeries, {
       lineColor: "rgba(34, 197, 94, 0.0)",
       topColor: "rgba(34, 197, 94, 0.08)",
       bottomColor: "rgba(34, 197, 94, 0.02)",
@@ -62,8 +63,16 @@ export function CandlestickChart({ historical, predictions }: Props) {
       lineVisible: false,
     });
 
-    // 80% confidence band (darker)
-    const band80 = chart.addSeries(AreaSeries, {
+    const band95Lower = chart.addSeries(LineSeries, {
+      color: "rgba(34, 197, 94, 0.2)",
+      lineWidth: 1 as const,
+      lineStyle: 2,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+
+    // 80% confidence band (upper area fills down, lower line marks boundary)
+    const band80Upper = chart.addSeries(AreaSeries, {
       lineColor: "rgba(34, 197, 94, 0.0)",
       topColor: "rgba(34, 197, 94, 0.15)",
       bottomColor: "rgba(34, 197, 94, 0.05)",
@@ -71,21 +80,35 @@ export function CandlestickChart({ historical, predictions }: Props) {
       lineVisible: false,
     });
 
-    // Median prediction line
-    const medianLine = chart.addSeries(AreaSeries, {
-      lineColor: "#22c55e",
-      topColor: "rgba(34, 197, 94, 0.0)",
-      bottomColor: "rgba(34, 197, 94, 0.0)",
-      lineWidth: 2,
+    const band80Lower = chart.addSeries(LineSeries, {
+      color: "rgba(34, 197, 94, 0.35)",
+      lineWidth: 1 as const,
       lineStyle: 2,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+
+    // Median prediction line
+    const medianLine = chart.addSeries(LineSeries, {
+      color: "#22c55e",
+      lineWidth: 2 as const,
+      lineStyle: 2,
+      lastValueVisible: false,
+      priceLineVisible: false,
     });
 
     if (predictions.length > 0) {
-      band95.setData(
+      band95Upper.setData(
         predictions.map((p) => ({ time: p.date, value: p.upper_95 }))
       );
-      band80.setData(
+      band95Lower.setData(
+        predictions.map((p) => ({ time: p.date, value: p.lower_95 }))
+      );
+      band80Upper.setData(
         predictions.map((p) => ({ time: p.date, value: p.upper_80 }))
+      );
+      band80Lower.setData(
+        predictions.map((p) => ({ time: p.date, value: p.lower_80 }))
       );
       medianLine.setData(
         predictions.map((p) => ({ time: p.date, value: p.median }))

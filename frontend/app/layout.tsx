@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { TickerSearch } from "@/components/TickerSearch";
+import { ClientShell } from "@/components/ClientShell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,10 +29,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${mono.variable} font-sans antialiased`}
       >
-        <div className="flex h-screen overflow-hidden">
-          <TickerSearch />
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
+        <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );
