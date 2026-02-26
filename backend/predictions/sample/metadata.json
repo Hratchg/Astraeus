@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-02-26T01:32:40.040210+00:00",
+  "model_version": "tft-v1-sample",
+  "tickers": [
+    "AAPL",
+    "NVDA",
+    "MSFT",
+    "XOM",
+    "CVX"
+  ],
+  "horizons": [
+    1,
+    5,
+    10,
+    20
+  ],
+  "note": "Sample data for frontend development. Not real predictions."
+}
