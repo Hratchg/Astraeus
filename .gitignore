@@ -1,0 +1,41 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# ML artifacts
+backend/models/
+backend/predictions/*.json
+backend/predictions/*.parquet
+!backend/predictions/sample/
+*.pkl
+*.pt
+*.pth
+*.onnx
+
+# Pipeline logs
+backend/pipeline/logs/
+
+# Node
+node_modules/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
